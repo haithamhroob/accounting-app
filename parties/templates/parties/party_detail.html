@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% load party_filters %}
+
+{% block title %}{{ party.name }} - النظام المحاسبي{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-person-fill text-primary me-2"></i>
+        {{ party.name }}
+    </h2>
+    <div>
+        <a href="{% url 'parties:update' party.pk %}" class="btn btn-warning">
+            <i class="bi bi-pencil me-1"></i>
+            تعديل
+        </a>
+        <a href="{% url 'reports:party' party.pk %}" class="btn btn-info text-white">
+            <i class="bi bi-file-earmark-text me-1"></i>
+            تقرير كامل
+        </a>
+    </div>
+</div>
+
+<!-- Party Info -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-info-circle me-2"></i>
+                بيانات الطرف
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless mb-0">
+                    <tr>
+                        <th class="text-muted">النوع:</th>
+                        <td>
+                            <span class="status-badge type-{{ party.party_type }}">
+                                {{ party.get_party_type_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="text-muted">رقم الهاتف:</th>
+                        <td>{{ party.phone|default:"غير محدد" }}</td>
+                    </tr>
+                    <tr>
+                        <th class="text-muted">البريد الإلكتروني:</th>
+                        <td>{{ party.email|default:"غير محدد" }}</td>
+                    </tr>
+                    <tr>
+                        <th class="text-muted">تاريخ الإضافة:</th>
+                        <td>{{ party.created_at|date:"Y/m/d H:i" }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-wallet2 me-2"></i>
+                الرصيد
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <div class="text-center">
+                    <div
+                        class="display-4 fw-bold {% if balance > 0 %}text-danger{% elif balance < 0 %}text-success{% else %}text-muted{% endif %}">
+                        {% if balance >= 0 %}{{ balance }}{% else %}{{ balance|abs }}{% endif %}
+                    </div>
+                    <div class="text-muted mt-2">
+                        {% if balance > 0 %}
+                        <i class="bi bi-arrow-down-circle text-danger me-1"></i>
+                        له علينا (مدين)
+                        {% elif balance < 0 %} <i class="bi bi-arrow-up-circle text-success me-1"></i>
+                            لنا عليه (دائن)
+                            {% else %}
+                            <i class="bi bi-check-circle me-1"></i>
+                            لا يوجد رصيد
+                            {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Ledger Entries -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>
+            <i class="bi bi-journal-text me-2"></i>
+            آخر الحركات
+        </span>
+        <a href="{% url 'reports:party' party.pk %}" class="btn btn-sm btn-outline-primary">
+            عرض الكل
+        </a>
+    </div>
+    <div class="card-body p-0">
+        {% if ledger_entries %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>التاريخ</th>
+                        <th>الوصف</th>
+                        <th>مدين</th>
+                        <th>دائن</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in ledger_entries %}
+                    <tr>
+                        <td>{{ entry.date|date:"Y/m/d" }}</td>
+                        <td>{{ entry.description }}</td>
+                        <td>
+                            {% if entry.entry_type == 'debit' %}
+                            <span class="text-danger fw-bold">{{ entry.amount }}</span>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if entry.entry_type == 'credit' %}
+                            <span class="text-success fw-bold">{{ entry.amount }}</span>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state py-4">
+            <i class="bi bi-journal"></i>
+            <p class="text-muted mb-0">لا توجد حركات مسجلة</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'parties:list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-right me-1"></i>
+        العودة للقائمة
+    </a>
+</div>
+{% endblock %}

@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ invoice.invoice_number }} - النظام المحاسبي{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-receipt text-primary me-2"></i>
+        فاتورة {{ invoice.invoice_number }}
+    </h2>
+    <div class="d-flex gap-2">
+        {% if invoice.can_edit %}
+        <a href="{% url 'invoices:update' invoice.pk %}" class="btn btn-warning">
+            <i class="bi bi-pencil me-1"></i>
+            تعديل
+        </a>
+        {% endif %}
+
+        {% if invoice.can_issue %}
+        <form method="post" action="{% url 'invoices:issue' invoice.pk %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success" onclick="return confirm('هل تريد إصدار هذه الفاتورة؟')">
+                <i class="bi bi-check-circle me-1"></i>
+                إصدار الفاتورة
+            </button>
+        </form>
+        {% endif %}
+
+        {% if invoice.status != 'paid' and invoice.status != 'cancelled' and invoice.status != 'draft' %}
+        <a href="{% url 'payments:create' invoice.pk %}" class="btn btn-primary">
+            <i class="bi bi-cash me-1"></i>
+            إضافة دفعة
+        </a>
+        {% endif %}
+
+        {% if invoice.status != 'cancelled' and invoice.get_paid_amount == 0 %}
+        <form method="post" action="{% url 'invoices:cancel' invoice.pk %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger" onclick="return confirm('هل تريد إلغاء هذه الفاتورة؟')">
+                <i class="bi bi-x-circle me-1"></i>
+                إلغاء
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Invoice Info Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-info-circle me-2"></i>
+                معلومات الفاتورة
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless mb-0">
+                    <tr>
+                        <th class="text-muted" style="width: 40%;">رقم الفاتورة:</th>
+                        <td class="fw-bold">{{ invoice.invoice_number }}</td>
+                    </tr>
+                    <tr>
+                        <th class="text-muted">الطرف:</th>
+                        <td>
+                            <a href="{% url 'parties:detail' invoice.party.pk %}">
+                                {{ invoice.party.name }}
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="text-muted">نوع الفاتورة:</th>
+                        <td>
+                            <span class="status-badge type-{{ invoice.invoice_type }}">
+                                {{ invoice.get_invoice_type_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="text-muted">الحالة:</th>
+                        <td>
+                            <span class="status-badge status-{{ invoice.status }}">
+                                {{ invoice.get_status_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="text-muted">تاريخ الإصدار:</th>
+                        <td>{{ invoice.issue_date|date:"Y/m/d" }}</td>
+                    </tr>
+                    {% if invoice.due_date %}
+                    <tr>
+                        <th class="text-muted">تاريخ الاستحقاق:</th>
+                        <td>{{ invoice.due_date|date:"Y/m/d" }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-wallet2 me-2"></i>
+                ملخص المبالغ
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless mb-0">
+                    <tr>
+                        <th class="text-muted" style="width: 40%;">المجموع الكلي:</th>
+                        <td class="fw-bold fs-5">{{ total }}</td>
+                    </tr>
+                    <tr>
+                        <th class="text-muted">المدفوع:</th>
+                        <td class="text-success fw-bold fs-5">{{ paid }}</td>
+                    </tr>
+                    <tr>
+                        <th class="text-muted">المتبقي:</th>
+                        <td class="{% if remaining > 0 %}text-danger{% else %}text-success{% endif %} fw-bold fs-5">
+                            {{ remaining }}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Invoice Items -->
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="bi bi-list-ul me-2"></i>
+        بنود الفاتورة
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>الوصف</th>
+                        <th>الكمية</th>
+                        <th>سعر الوحدة</th>
+                        <th>المجموع</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in invoice.items.all %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ item.description }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.unit_price }}</td>
+                        <td class="fw-bold">{{ item.get_total }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">
+                            لا توجد بنود
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-light">
+                    <tr>
+                        <td colspan="4" class="text-start fw-bold">المجموع الكلي</td>
+                        <td class="fw-bold fs-5">{{ total }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Payments -->
+{% if invoice.payments.exists %}
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="bi bi-cash-stack me-2"></i>
+        الدفعات
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>تاريخ الدفع</th>
+                        <th>المبلغ</th>
+                        <th>طريقة الدفع</th>
+                        <th>ملاحظات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in invoice.payments.all %}
+                    <tr>
+                        <td>{{ payment.payment_date|date:"Y/m/d" }}</td>
+                        <td class="fw-bold text-success">{{ payment.amount }}</td>
+                        <td>{{ payment.get_payment_method_display }}</td>
+                        <td>{{ payment.notes|default:"-" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Notes -->
+{% if invoice.notes %}
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="bi bi-sticky me-2"></i>
+        ملاحظات
+    </div>
+    <div class="card-body">
+        {{ invoice.notes }}
+    </div>
+</div>
+{% endif %}
+
+<div class="mt-4">
+    <a href="{% url 'invoices:list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-right me-1"></i>
+        العودة للقائمة
+    </a>
+</div>
+{% endblock %}

@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% load party_filters %}
+
+{% block title %}الأطراف - النظام المحاسبي{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-people-fill text-primary me-2"></i>
+        الأطراف
+    </h2>
+    <a href="{% url 'parties:create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>
+        إضافة طرف
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">البحث</label>
+                <input type="text" name="search" class="form-control" placeholder="ابحث بالاسم..."
+                    value="{{ search_query }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">النوع</label>
+                <select name="type" class="form-select">
+                    <option value="">الكل</option>
+                    {% for value, label in party_types %}
+                    <option value="{{ value }}" {% if current_type == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="bi bi-search me-1"></i>
+                    بحث
+                </button>
+                <a href="{% url 'parties:list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-lg me-1"></i>
+                    مسح
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Parties List -->
+<div class="card">
+    <div class="card-body p-0">
+        {% if parties %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>الاسم</th>
+                        <th>النوع</th>
+                        <th>رقم الهاتف</th>
+                        <th>البريد الإلكتروني</th>
+                        <th>الرصيد</th>
+                        <th>تاريخ الإضافة</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for party in parties %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'parties:detail' party.pk %}" class="text-decoration-none fw-bold">
+                                {{ party.name }}
+                            </a>
+                        </td>
+                        <td>
+                            <span class="status-badge type-{{ party.party_type }}">
+                                {{ party.get_party_type_display }}
+                            </span>
+                        </td>
+                        <td>{{ party.phone|default:"-" }}</td>
+                        <td>{{ party.email|default:"-" }}</td>
+                        <td>
+                            {% with balance=party.get_balance %}
+                            {% if balance > 0 %}
+                            <span class="text-danger fw-bold">{{ balance }}</span>
+                            {% elif balance < 0 %} <span class="text-success fw-bold">{{ balance|abs }}</span>
+                                {% else %}
+                                <span class="text-muted">0</span>
+                                {% endif %}
+                                {% endwith %}
+                        </td>
+                        <td>{{ party.created_at|date:"Y/m/d" }}</td>
+                        <td class="action-buttons">
+                            <a href="{% url 'parties:detail' party.pk %}" class="btn btn-sm btn-outline-primary"
+                                title="عرض">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'parties:update' party.pk %}" class="btn btn-sm btn-outline-warning"
+                                title="تعديل">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'reports:party' party.pk %}" class="btn btn-sm btn-outline-info"
+                                title="تقرير">
+                                <i class="bi bi-file-earmark-text"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="card-footer">
+            <nav>
+                <ul class="pagination justify-content-center mb-0">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link"
+                            href="?page={{ page_obj.previous_page_number }}{% if current_type %}&type={{ current_type }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">
+                            السابق
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            صفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link"
+                            href="?page={{ page_obj.next_page_number }}{% if current_type %}&type={{ current_type }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">
+                            التالي
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-people"></i>
+            <h5>لا توجد أطراف</h5>
+            <p class="text-muted">لم تتم إضافة أي أطراف بعد</p>
+            <a href="{% url 'parties:create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i>
+                إضافة أول طرف
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+{% load report_filters %}
+
+{% block title %}تقرير {{ party.name }} - النظام المحاسبي{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-file-earmark-text text-primary me-2"></i>
+        تقرير رصيد: {{ party.name }}
+    </h2>
+    <div>
+        <a href="{% url 'parties:detail' party.pk %}" class="btn btn-outline-primary">
+            <i class="bi bi-person me-1"></i>
+            بيانات الطرف
+        </a>
+        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+            <i class="bi bi-printer me-1"></i>
+            طباعة
+        </button>
+    </div>
+</div>
+
+<!-- Party Info -->
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="bi bi-person-fill me-2"></i>
+        بيانات الطرف
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table table-borderless mb-0">
+                    <tr>
+                        <th class="text-muted" style="width: 30%;">الاسم:</th>
+                        <td class="fw-bold">{{ party.name }}</td>
+                    </tr>
+                    <tr>
+                        <th class="text-muted">النوع:</th>
+                        <td>
+                            <span class="status-badge type-{{ party.party_type }}">
+                                {{ party.get_party_type_display }}
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-borderless mb-0">
+                    <tr>
+                        <th class="text-muted" style="width: 40%;">رقم الهاتف:</th>
+                        <td>{{ party.phone|default:"غير محدد" }}</td>
+                    </tr>
+                    <tr>
+                        <th class="text-muted">البريد الإلكتروني:</th>
+                        <td>{{ party.email|default:"غير محدد" }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="icon" style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); color: #065f46;">
+                <i class="bi bi-receipt"></i>
+            </div>
+            <div class="value">{{ total_sales }}</div>
+            <div class="label">إجمالي المبيعات</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="icon" style="background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); color: #9d174d;">
+                <i class="bi bi-cart"></i>
+            </div>
+            <div class="value">{{ total_purchases }}</div>
+            <div class="label">إجمالي المشتريات</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="icon" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #1e40af;">
+                <i class="bi bi-cash-stack"></i>
+            </div>
+            <div class="value">{{ total_payments }}</div>
+            <div class="label">إجمالي الدفعات</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="icon {{ balance_class }}">
+                <i class="bi bi-wallet2"></i>
+            </div>
+            <div class="value {% if balance > 0 %}text-danger{% elif balance < 0 %}text-success{% endif %}">
+                {% if balance >= 0 %}{{ balance }}{% else %}{{ balance|abs }}{% endif %}
+            </div>
+            <div class="label">{{ balance_text }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Invoices -->
+{% if recent_invoices %}
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="bi bi-receipt me-2"></i>
+        آخر الفواتير
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>رقم الفاتورة</th>
+                        <th>النوع</th>
+                        <th>التاريخ</th>
+                        <th>الحالة</th>
+                        <th>المجموع</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for invoice in recent_invoices %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'invoices:detail' invoice.pk %}">
+                                {{ invoice.invoice_number }}
+                            </a>
+                        </td>
+                        <td>
+                            <span class="status-badge type-{{ invoice.invoice_type }}">
+                                {{ invoice.get_invoice_type_display }}
+                            </span>
+                        </td>
+                        <td>{{ invoice.issue_date|date:"Y/m/d" }}</td>
+                        <td>
+                            <span class="status-badge status-{{ invoice.status }}">
+                                {{ invoice.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="fw-bold">{{ invoice.get_total }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Ledger Entries -->
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-journal-text me-2"></i>
+        سجل الحركات
+    </div>
+    <div class="card-body p-0">
+        {% if ledger_entries %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>التاريخ</th>
+                        <th>الوصف</th>
+                        <th>مدين</th>
+                        <th>دائن</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in ledger_entries %}
+                    <tr>
+                        <td>{{ entry.date|date:"Y/m/d" }}</td>
+                        <td>
+                            {{ entry.description }}
+                            {% if entry.invoice %}
+                            <a href="{% url 'invoices:detail' entry.invoice.pk %}" class="text-muted small">
+                                <i class="bi bi-link-45deg"></i>
+                            </a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if entry.entry_type == 'debit' %}
+                            <span class="text-danger fw-bold">{{ entry.amount }}</span>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if entry.entry_type == 'credit' %}
+                            <span class="text-success fw-bold">{{ entry.amount }}</span>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-light">
+                    <tr>
+                        <td colspan="2" class="fw-bold">الرصيد</td>
+                        <td colspan="2"
+                            class="fw-bold {% if balance > 0 %}text-danger{% elif balance < 0 %}text-success{% endif %}">
+                            {% if balance >= 0 %}{{ balance }}{% else %}{{ balance|abs }}{% endif %}
+                            {% if balance > 0 %}(مدين){% elif balance < 0 %}(دائن){% endif %} </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state py-4">
+            <i class="bi bi-journal"></i>
+            <p class="text-muted mb-0">لا توجد حركات مسجلة</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'parties:list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-right me-1"></i>
+        العودة للأطراف
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .bg-debit {
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+        color: #991b1b;
+    }
+
+    .bg-credit {
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        color: #065f46;
+    }
+
+    .bg-neutral {
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+        color: #64748b;
+    }
+
+    @media print {
+
+        .navbar,
+        .footer,
+        .btn,
+        .no-print {
+            display: none !important;
+        }
+
+        .card {
+            box-shadow: none !important;
+            border: 1px solid #ddd !important;
+        }
+    }
+</style>
+{% endblock %}
