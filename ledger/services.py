@@ -101,3 +101,36 @@ def get_party_balance(party):
     ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
     
     return debit - credit
+
+
+def create_refund_entry(payment):
+    """
+    إنشاء قيد عكسي عند استرداد دفعة
+    
+    استرداد دفعة من عميل = مدين (إرجاع الدين)
+    استرداد دفعة لمورد = دائن (إرجاع دينه)
+    """
+    from invoices.models import Invoice
+    
+    invoice = payment.invoice
+    
+    # تحديد نوع الحركة (عكس قيد الدفعة)
+    if invoice.invoice_type == Invoice.InvoiceType.SALE:
+        # استرداد دفعة من عميل: إرجاع الدين المدين
+        entry_type = LedgerEntry.EntryType.DEBIT
+        description = f"استرداد دفعة على فاتورة {invoice.invoice_number}"
+    else:
+        # استرداد دفعة لمورد: إرجاع الدين الدائن
+        entry_type = LedgerEntry.EntryType.CREDIT
+        description = f"استرداد دفعة لفاتورة {invoice.invoice_number}"
+    
+    entry = LedgerEntry.objects.create(
+        party=invoice.party,
+        invoice=invoice,
+        entry_type=entry_type,
+        amount=payment.amount,
+        date=payment.payment_date,
+        description=description
+    )
+    
+    return entry

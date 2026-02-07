@@ -1,0 +1,534 @@
+openapi: 3.0.3
+info:
+  title: نظام محاسبي - Accounting API
+  description: |
+    واجهة برمجة التطبيقات للنظام المحاسبي العربي
+    
+    ## المميزات
+    - إدارة العملاء والموردين (Parties)
+    - إدارة الفواتير (Invoices)
+    - إدارة الدفعات (Payments)
+    - دفتر الأستاذ (Ledger)
+    - التقارير المالية (Reports)
+    - استيراد/تصدير Excel
+    
+    ## المصادقة (Authentication)
+    يستخدم هذا الـ API مصادقة JWT. احصل على token من `/api/token/` واستخدمه في header:
+    ```
+    Authorization: Bearer <your_token>
+    ```
+    
+    ## الأدوار والصلاحيات (Roles)
+    - **Admin**: وصول كامل لجميع العمليات
+    - **Accountant**: إدارة الفواتير والدفعات والقيود
+    - **Clerk**: إنشاء وقراءة (بدون حذف)
+    - **ReadOnly**: قراءة فقط
+    
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+
+servers:
+  - url: http://localhost:8000
+    description: Development Server
+  - url: https://your-production-domain.com
+    description: Production Server
+
+tags:
+  - name: Authentication
+    description: مصادقة المستخدمين
+  - name: Parties
+    description: إدارة العملاء والموردين
+  - name: Invoices
+    description: إدارة الفواتير
+  - name: Payments
+    description: إدارة الدفعات
+  - name: Ledger
+    description: دفتر الأستاذ
+  - name: Reports
+    description: التقارير المالية
+  - name: Excel
+    description: استيراد وتصدير البيانات
+
+security:
+  - BearerAuth: []
+
+paths:
+  # ==========================================================================
+  # Authentication
+  # ==========================================================================
+  /api/token/:
+    post:
+      tags:
+        - Authentication
+      summary: الحصول على JWT Token
+      description: تسجيل الدخول والحصول على access و refresh tokens
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  example: admin
+                password:
+                  type: string
+                  format: password
+                  example: your_password
+      responses:
+        '200':
+          description: تسجيل دخول ناجح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access:
+                    type: string
+                    description: Access token (صالح لساعة واحدة)
+                  refresh:
+                    type: string
+                    description: Refresh token (صالح لـ 7 أيام)
+        '401':
+          description: بيانات اعتماد غير صحيحة
+
+  /api/token/refresh/:
+    post:
+      tags:
+        - Authentication
+      summary: تجديد Access Token
+      description: استخدام refresh token للحصول على access token جديد
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh
+              properties:
+                refresh:
+                  type: string
+      responses:
+        '200':
+          description: تم التجديد بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access:
+                    type: string
+
+  # ==========================================================================
+  # Parties (العملاء والموردين)
+  # ==========================================================================
+  /api/v1/parties/:
+    get:
+      tags:
+        - Parties
+      summary: قائمة الأطراف
+      description: الحصول على قائمة جميع العملاء والموردين
+      parameters:
+        - name: party_type
+          in: query
+          schema:
+            type: string
+            enum: [customer, supplier]
+          description: فلترة حسب النوع
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: بحث في الاسم أو الهاتف أو البريد
+        - name: page
+          in: query
+          schema:
+            type: integer
+          description: رقم الصفحة
+      responses:
+        '200':
+          description: قائمة الأطراف
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPartyList'
+    post:
+      tags:
+        - Parties
+      summary: إضافة طرف جديد
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartyCreate'
+      responses:
+        '201':
+          description: تم الإنشاء بنجاح
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Party'
+
+  /api/v1/parties/{id}/:
+    get:
+      tags:
+        - Parties
+      summary: تفاصيل طرف
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: تفاصيل الطرف
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Party'
+
+  /api/v1/parties/{id}/balance/:
+    get:
+      tags:
+        - Parties
+      summary: رصيد طرف
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: رصيد الطرف
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  party_id:
+                    type: integer
+                  party_name:
+                    type: string
+                  balance:
+                    type: string
+                  balance_display:
+                    type: string
+
+  # ==========================================================================
+  # Invoices (الفواتير)
+  # ==========================================================================
+  /api/v1/invoices/:
+    get:
+      tags:
+        - Invoices
+      summary: قائمة الفواتير
+      parameters:
+        - name: invoice_type
+          in: query
+          schema:
+            type: string
+            enum: [sale, purchase]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, issued, paid, partial, cancelled]
+        - name: party
+          in: query
+          schema:
+            type: integer
+          description: معرف الطرف
+      responses:
+        '200':
+          description: قائمة الفواتير
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedInvoiceList'
+    post:
+      tags:
+        - Invoices
+      summary: إنشاء فاتورة
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvoiceCreate'
+      responses:
+        '201':
+          description: تم الإنشاء بنجاح
+
+  /api/v1/invoices/{id}/issue/:
+    post:
+      tags:
+        - Invoices
+      summary: إصدار فاتورة
+      description: تحويل فاتورة من مسودة إلى صادرة
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: تم الإصدار بنجاح
+
+  /api/v1/invoices/{id}/cancel/:
+    post:
+      tags:
+        - Invoices
+      summary: إلغاء فاتورة
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: تم الإلغاء بنجاح
+
+  # ==========================================================================
+  # Reports (التقارير)
+  # ==========================================================================
+  /api/v1/reports/summary/:
+    get:
+      tags:
+        - Reports
+      summary: تقرير ملخص الفترة
+      parameters:
+        - name: date_from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: تقرير الملخص
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  period:
+                    type: object
+                  invoices:
+                    type: object
+                  payments:
+                    type: object
+                  ledger:
+                    type: object
+                  parties_with_balance:
+                    type: array
+
+  # ==========================================================================
+  # Excel
+  # ==========================================================================
+  /api/v1/excel/export-all/:
+    get:
+      tags:
+        - Excel
+      summary: تصدير جميع البيانات
+      description: تحميل جميع البيانات في ملف Excel واحد
+      responses:
+        '200':
+          description: ملف Excel
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+
+  /api/v1/parties/export/:
+    get:
+      tags:
+        - Excel
+      summary: تصدير الأطراف
+      responses:
+        '200':
+          description: ملف Excel
+
+  /api/v1/parties/import/:
+    post:
+      tags:
+        - Excel
+      summary: استيراد الأطراف
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: تم الاستيراد بنجاح
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT Authentication Token
+        احصل على token من /api/token/
+
+  schemas:
+    Party:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        party_type:
+          type: string
+          enum: [customer, supplier]
+        party_type_display:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+        balance:
+          type: string
+        balance_display:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    PartyCreate:
+      type: object
+      required:
+        - name
+        - party_type
+      properties:
+        name:
+          type: string
+          example: شركة الاختبار
+        party_type:
+          type: string
+          enum: [customer, supplier]
+          example: customer
+        phone:
+          type: string
+          example: "0501234567"
+        email:
+          type: string
+          format: email
+          example: test@example.com
+
+    PaginatedPartyList:
+      type: object
+      properties:
+        count:
+          type: integer
+        total_pages:
+          type: integer
+        current_page:
+          type: integer
+        next:
+          type: string
+          nullable: true
+        previous:
+          type: string
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Party'
+
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: integer
+        invoice_number:
+          type: string
+        party:
+          type: integer
+        party_details:
+          $ref: '#/components/schemas/Party'
+        invoice_type:
+          type: string
+          enum: [sale, purchase]
+        issue_date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [draft, issued, paid, partial, cancelled]
+        total:
+          type: string
+        paid_amount:
+          type: string
+        remaining:
+          type: string
+
+    InvoiceCreate:
+      type: object
+      required:
+        - party
+        - invoice_type
+        - issue_date
+      properties:
+        party:
+          type: integer
+          description: معرف الطرف
+        invoice_type:
+          type: string
+          enum: [sale, purchase]
+        issue_date:
+          type: string
+          format: date
+        due_date:
+          type: string
+          format: date
+        notes:
+          type: string
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              description:
+                type: string
+              quantity:
+                type: number
+              unit_price:
+                type: number
+
+    PaginatedInvoiceList:
+      type: object
+      properties:
+        count:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Invoice'

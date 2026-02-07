@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
+from datetime import timedelta
 
 load_dotenv()
 
@@ -30,7 +31,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
+    # Third-party apps
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'drf_spectacular',
+    'django_filters',
     # Local apps
+    'api',
     'parties',
     'invoices',
     'payments',
@@ -120,3 +127,122 @@ MESSAGE_TAGS = {
     messages.WARNING: 'warning',
     messages.ERROR: 'danger',
 }
+
+# =============================================================================
+# Django REST Framework Configuration
+# =============================================================================
+REST_FRAMEWORK = {
+    # Authentication
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ),
+    
+    # Permissions
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    
+    # Pagination
+    'DEFAULT_PAGINATION_CLASS': 'api.pagination.StandardResultsSetPagination',
+    'PAGE_SIZE': 25,
+    
+    # Filtering
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ),
+    
+    # Schema generation
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    
+    # Response format
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ),
+    
+    # Exception handling
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
+    
+    # Date/Time formats
+    'DATE_FORMAT': '%Y-%m-%d',
+    'DATETIME_FORMAT': '%Y-%m-%d %H:%M:%S',
+}
+
+# =============================================================================
+# Simple JWT Configuration
+# =============================================================================
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+    
+    'ALGORITHM': 'HS256',
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+}
+
+# =============================================================================
+# DRF Spectacular (OpenAPI/Swagger) Configuration
+# =============================================================================
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'نظام محاسبي - Accounting API',
+    'DESCRIPTION': '''واجهة برمجة التطبيقات للنظام المحاسبي
+    
+## المميزات
+- إدارة العملاء والموردين
+- إدارة الفواتير والدفعات
+- دفتر الأستاذ
+- التقارير المالية
+- استيراد/تصدير Excel
+
+## المصادقة
+يستخدم هذا الـ API مصادقة JWT. احصل على token من `/api/token/` واستخدمه في header:
+```
+Authorization: Bearer <your_token>
+```
+    ''',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    
+    # Swagger UI settings
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorization': True,
+        'displayOperationId': False,
+    },
+    
+    # Tags for organization
+    'TAGS': [
+        {'name': 'الأطراف - Parties', 'description': 'إدارة العملاء والموردين'},
+        {'name': 'الفواتير - Invoices', 'description': 'إدارة الفواتير'},
+        {'name': 'الدفعات - Payments', 'description': 'إدارة الدفعات'},
+        {'name': 'دفتر الأستاذ - Ledger', 'description': 'قيود دفتر الأستاذ'},
+        {'name': 'التقارير - Reports', 'description': 'التقارير المالية'},
+        {'name': 'Excel - استيراد/تصدير', 'description': 'استيراد وتصدير البيانات'},
+    ],
+    
+    # Security
+    'SECURITY': [{'Bearer': []}],
+    'APPEND_COMPONENTS': {
+        'securitySchemes': {
+            'Bearer': {
+                'type': 'http',
+                'scheme': 'bearer',
+                'bearerFormat': 'JWT',
+            }
+        }
+    },
+}
+
+# =============================================================================
+# API Documentation Access Control
+# =============================================================================
+# Set to False in production to hide docs from non-staff users
+API_DOCS_PUBLIC = DEBUG
