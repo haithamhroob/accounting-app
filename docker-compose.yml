@@ -1,0 +1,45 @@
+name: accounting-app
+
+services:
+
+  # ── PostgreSQL Database Container ──────────────────────────────────────────
+  db:
+    image: postgres:15
+    container_name: accounting_db
+    restart: always
+    environment:
+      POSTGRES_DB: accounting_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    volumes:
+      # This saves your database data permanently even if the container stops
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  # ── Django Web App Container ───────────────────────────────────────────────
+  web:
+    build: .
+    container_name: accounting_web
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      # Django settings
+      SECRET_KEY: django-docker-secret-key-change-in-production
+      DEBUG: "True"
+      # Database connection - points to the 'db' service above
+      DATABASE_URL: postgres://postgres:postgres123@db:5432/accounting_db
+    depends_on:
+      - db
+    volumes:
+      # Mount your project code so changes reflect without rebuilding
+      - .:/app
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             python manage.py runserver 0.0.0.0:8000"
+
+# ── Named Volumes ──────────────────────────────────────────────────────────
+volumes:
+  postgres_data:

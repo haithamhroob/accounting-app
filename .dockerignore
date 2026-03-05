@@ -1,0 +1,35 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environment - NEVER copy this into Docker
+venv/
+env/
+.venv/
+
+# Git
+.git/
+.gitignore
+
+# Environment file (secrets should be passed via docker-compose, not copied)
+.env
+
+# Compiled files
+*.pyc
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Large unnecessary files
+runtime.zip
+staticfiles/
+
+# Test files
+*.test

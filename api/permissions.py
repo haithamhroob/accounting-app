@@ -88,7 +88,7 @@ class RoleBasedPermission(permissions.BasePermission):
         'create': 2,    # Clerk and above
         'update': 3,    # Accountant and above
         'partial_update': 3,  # Accountant and above
-        'destroy': 4,   # Admin only
+        'destroy': 4,   # Admin only (تمت إعادتها للأمان)
     }
     
     def get_user_role_level(self, user):

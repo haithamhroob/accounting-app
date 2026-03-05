@@ -9,7 +9,7 @@
         <i class="bi bi-calculator-fill me-3"></i>
         النظام المحاسبي
     </h1>
-    <p class="lead text-muted">
+    <p class="lead">
         نظام محاسبي متكامل لإدارة الفواتير والدفعات والأطراف
     </p>
 </div>
@@ -18,7 +18,7 @@
 <div class="row g-4 mb-5">
     <div class="col-md-3">
         <div class="stat-card">
-            <div class="icon" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #1e40af;">
+            <div class="icon">
                 <i class="bi bi-people-fill"></i>
             </div>
             <div class="value" id="parties-count">-</div>
@@ -27,7 +27,7 @@
     </div>
     <div class="col-md-3">
         <div class="stat-card">
-            <div class="icon" style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); color: #065f46;">
+            <div class="icon">
                 <i class="bi bi-receipt"></i>
             </div>
             <div class="value" id="invoices-count">-</div>
@@ -36,7 +36,7 @@
     </div>
     <div class="col-md-3">
         <div class="stat-card">
-            <div class="icon" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #92400e;">
+            <div class="icon">
                 <i class="bi bi-cash-stack"></i>
             </div>
             <div class="value" id="payments-count">-</div>
@@ -45,7 +45,7 @@
     </div>
     <div class="col-md-3">
         <div class="stat-card">
-            <div class="icon" style="background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); color: #9d174d;">
+            <div class="icon">
                 <i class="bi bi-journal-text"></i>
             </div>
             <div class="value" id="entries-count">-</div>
@@ -69,7 +69,7 @@
                     <i class="bi bi-person-plus-fill text-primary" style="font-size: 3rem;"></i>
                 </div>
                 <h5 class="card-title">إضافة طرف</h5>
-                <p class="card-text text-muted">إضافة عميل أو مورّد جديد للنظام</p>
+                <p class="card-text">إضافة عميل أو مورّد جديد للنظام</p>
                 <a href="{% url 'parties:create' %}" class="btn btn-primary">
                     <i class="bi bi-plus-lg me-1"></i>
                     إضافة طرف
@@ -84,7 +84,7 @@
                     <i class="bi bi-file-earmark-plus-fill text-success" style="font-size: 3rem;"></i>
                 </div>
                 <h5 class="card-title">إنشاء فاتورة</h5>
-                <p class="card-text text-muted">إنشاء فاتورة بيع أو شراء جديدة</p>
+                <p class="card-text">إنشاء فاتورة بيع أو شراء جديدة</p>
                 <a href="{% url 'invoices:create' %}" class="btn btn-success">
                     <i class="bi bi-plus-lg me-1"></i>
                     إنشاء فاتورة
@@ -99,7 +99,7 @@
                     <i class="bi bi-graph-up-arrow text-info" style="font-size: 3rem;"></i>
                 </div>
                 <h5 class="card-title">عرض التقارير</h5>
-                <p class="card-text text-muted">عرض ملخص الفترة والأرصدة</p>
+                <p class="card-text">عرض ملخص الفترة والأرصدة</p>
                 <a href="{% url 'reports:summary' %}" class="btn btn-info text-white">
                     <i class="bi bi-bar-chart-fill me-1"></i>
                     التقارير
@@ -121,14 +121,14 @@
         <a href="{% url 'parties:list' %}" class="text-decoration-none">
             <div class="card h-100">
                 <div class="card-body d-flex align-items-center p-4">
-                    <div class="icon-box me-4" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); padding: 1.5rem; border-radius: 12px;">
+                    <div class="icon-box me-4" style="padding: 1.5rem; border-radius: 12px;">
                         <i class="bi bi-people-fill text-primary" style="font-size: 2rem;"></i>
                     </div>
                     <div>
-                        <h5 class="card-title text-dark mb-1">الأطراف</h5>
+                        <h5 class="card-title mb-1">الأطراف</h5>
                         <p class="card-text text-muted mb-0">إدارة العملاء والموردين</p>
                     </div>
-                    <i class="bi bi-chevron-left ms-auto text-muted" style="font-size: 1.5rem;"></i>
+                    <i class="bi bi-chevron-left ms-auto" style="font-size: 1.5rem;"></i>
                 </div>
             </div>
         </a>
@@ -137,14 +137,14 @@
         <a href="{% url 'invoices:list' %}" class="text-decoration-none">
             <div class="card h-100">
                 <div class="card-body d-flex align-items-center p-4">
-                    <div class="icon-box me-4" style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); padding: 1.5rem; border-radius: 12px;">
+                    <div class="icon-box me-4" style="padding: 1.5rem; border-radius: 12px;">
                         <i class="bi bi-receipt text-success" style="font-size: 2rem;"></i>
                     </div>
                     <div>
-                        <h5 class="card-title text-dark mb-1">الفواتير</h5>
+                        <h5 class="card-title mb-1">الفواتير</h5>
                         <p class="card-text text-muted mb-0">إدارة فواتير البيع والشراء</p>
                     </div>
-                    <i class="bi bi-chevron-left ms-auto text-muted" style="font-size: 1.5rem;"></i>
+                    <i class="bi bi-chevron-left ms-auto" style="font-size: 1.5rem;"></i>
                 </div>
             </div>
         </a>

@@ -14,6 +14,7 @@ class PartySerializer(serializers.ModelSerializer):
     """
     balance = serializers.SerializerMethodField()
     balance_display = serializers.SerializerMethodField()
+    status_label = serializers.SerializerMethodField()
     party_type_display = serializers.CharField(source='get_party_type_display', read_only=True)
     
     class Meta:
@@ -27,9 +28,19 @@ class PartySerializer(serializers.ModelSerializer):
             'email',
             'balance',
             'balance_display',
+            'status_label',  # الحقل الجديد للهواة والمحترفين
             'created_at',
         ]
-        read_only_fields = ['id', 'created_at', 'balance', 'balance_display', 'party_type_display']
+        read_only_fields = ['id', 'created_at', 'balance', 'balance_display', 'party_type_display', 'status_label']
+    
+    def get_status_label(self, obj):
+        """تسمية مخصصة حسب حالة الرصيد"""
+        balance = obj.get_balance()
+        if balance > 0:
+            return "مدين (يجب الحصول على المال)"
+        elif balance < 0:
+            return "دائن (يجب دفع المال)"
+        return "متعادل"
     
     def get_balance(self, obj):
         """Get the party's current balance"""
@@ -47,13 +58,23 @@ class PartyListSerializer(serializers.ModelSerializer):
     """
     party_type_display = serializers.CharField(source='get_party_type_display', read_only=True)
     balance = serializers.SerializerMethodField()
+    status_label = serializers.SerializerMethodField()
     
     class Meta:
         model = Party
-        fields = ['id', 'name', 'party_type', 'party_type_display', 'phone', 'balance']
+        fields = ['id', 'name', 'party_type', 'party_type_display', 'phone', 'balance', 'status_label']
     
     def get_balance(self, obj):
         return str(obj.get_balance())
+    
+    def get_status_label(self, obj):
+        """تسمية مخصصة حسب حالة الرصيد"""
+        balance = obj.get_balance()
+        if balance > 0:
+            return "مدين (يجب الحصول على المال)"
+        elif balance < 0:
+            return "دائن (يجب دفع المال)"
+        return "متعادل"
 
 
 class PartyCreateUpdateSerializer(serializers.ModelSerializer):
