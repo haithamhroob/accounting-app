@@ -1,54 +1,71 @@
-# النظام المحاسبي - Accounting System
+# Lightweight Accounting System
 
-نظام محاسبي خفيف يعمل محلياً على Windows باستخدام Django و PostgreSQL.
+A lightweight, fully Arabic (RTL) double-entry accounting web application built with Django and PostgreSQL. It manages parties (customers and suppliers), sales and purchase invoices, payments, an automated ledger, and balance reporting — designed to run locally on Windows or in Docker.
 
-## المميزات
+## Features
 
-- ✅ واجهة عربية بالكامل (RTL)
-- ✅ إدارة الأطراف (العملاء والموردين)
-- ✅ إدارة الفواتير (بيع وشراء)
-- ✅ تسجيل الدفعات
-- ✅ دفتر الأستاذ الآلي
-- ✅ تقارير الأرصدة والملخصات
-- ✅ لوحة إدارة Django
+- ✅ Fully Arabic Right-to-Left (RTL) user interface
+- ✅ Party management (customers and suppliers)
+- ✅ Sales and purchase invoice management
+- ✅ Payment recording and tracking
+- ✅ Automated ledger entries based on accounting rules
+- ✅ Balance and period summary reports
+- ✅ Django admin dashboard
+- ✅ REST API with JWT authentication and OpenAPI documentation
+- ✅ Excel import/export support
+- ✅ Containerized with Docker and Docker Compose
+- ✅ Health-check endpoint for monitoring
 
-## المتطلبات
+## Tech Stack
 
-- Python 3.12
+| Layer            | Technology                                             |
+|------------------|--------------------------------------------------------|
+| Backend          | Django 5.x                                             |
+| API              | Django REST Framework, SimpleJWT, drf-spectacular      |
+| Database         | PostgreSQL 15                                          |
+| Data Processing  | pandas, openpyxl                                       |
+| Server           | Gunicorn, WhiteNoise                                   |
+| Containerization | Docker, Docker Compose                                 |
+| Config           | python-dotenv, dj-database-url                         |
+| Filtering        | django-filter                                          |
+
+## Prerequisites
+
+- Python 3.11+
 - PostgreSQL (localhost:5432)
-- pgAdmin (للإدارة)
+- pgAdmin (optional, for database management)
+- Docker (optional, for containerized deployment)
 
-## خطوات الإعداد
+## Local Setup
 
-### 1. إنشاء قاعدة البيانات
+### 1. Create the Database
 
-افتح psql أو pgAdmin ونفذ:
+Open `psql` or pgAdmin and run:
 
 ```sql
 CREATE DATABASE accounting_db;
 ```
 
-### 2. إنشاء البيئة الافتراضية
+### 2. Create a Virtual Environment
 
 ```powershell
-cd "c:\Users\Haitham\Desktop\AI projects\مشروع محاسبي خفيف"
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 ```
 
-### 3. تثبيت المتطلبات
+### 3. Install Dependencies
 
 ```powershell
 pip install -r requirements.txt
 ```
 
-### 4. إعداد ملف البيئة
+### 4. Configure Environment Variables
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-ثم عدّل ملف `.env` وأدخل بيانات قاعدة البيانات:
+Edit the `.env` file with your database credentials:
 
 ```
 DB_NAME=accounting_db
@@ -60,80 +77,94 @@ SECRET_KEY=your-secret-key-change-this
 DEBUG=True
 ```
 
-### 5. تشغيل الهجرات
+### 5. Apply Database Migrations
 
 ```powershell
 python manage.py makemigrations parties invoices payments ledger
 python manage.py migrate
 ```
 
-### 6. إنشاء مستخدم مدير
+### 6. Create an Admin User
 
 ```powershell
 python manage.py createsuperuser
 ```
 
-أدخل اسم المستخدم وكلمة المرور والبريد الإلكتروني.
-
-### 7. تشغيل الخادم
+### 7. Run the Development Server
 
 ```powershell
 python manage.py runserver
 ```
 
-افتح المتصفح على: http://localhost:8000
+Open your browser at: http://localhost:8000
 
-## الروابط
+## Docker Deployment
 
-| الصفحة | الرابط |
-|--------|--------|
-| الصفحة الرئيسية | http://localhost:8000/ |
-| الأطراف | http://localhost:8000/parties/ |
-| الفواتير | http://localhost:8000/invoices/ |
-| ملخص الفترة | http://localhost:8000/reports/summary/ |
-| لوحة الإدارة | http://localhost:8000/admin/ |
-| فحص الصحة | http://localhost:8000/health |
+Run the entire stack (PostgreSQL + Django) with a single command:
 
-## هيكل المشروع
-
-```
-مشروع محاسبي خفيف/
-├── core/               # إعدادات Django الرئيسية
-├── parties/            # تطبيق الأطراف
-├── invoices/           # تطبيق الفواتير
-├── payments/           # تطبيق الدفعات
-├── ledger/             # تطبيق دفتر الأستاذ
-├── reports/            # تطبيق التقارير
-├── templates/          # القوالب العامة
-├── static/             # الملفات الثابتة
-├── requirements.txt    # المتطلبات
-├── manage.py          # ملف الإدارة
-├── .env.example       # مثال ملف البيئة
-└── README.md          # هذا الملف
+```powershell
+docker-compose up --build
 ```
 
-## القواعد المحاسبية
+The app will be available at http://localhost:8000.
 
-### الفواتير
-- فاتورة بيع للعميل = قيد مدين على العميل
-- فاتورة شراء من مورد = قيد دائن على المورد
+## Application Routes
 
-### الدفعات
-- دفعة من عميل = قيد دائن (تخفيض الرصيد المدين)
-- دفعة لمورد = قيد مدين (تخفيض الرصيد الدائن)
+| Page            | URL                                    |
+|-----------------|----------------------------------------|
+| Home            | http://localhost:8000/                 |
+| Parties         | http://localhost:8000/parties/         |
+| Invoices        | http://localhost:8000/invoices/        |
+| Period Summary  | http://localhost:8000/reports/summary/ |
+| Admin Dashboard | http://localhost:8000/admin/           |
+| Health Check    | http://localhost:8000/health           |
 
-### الرصيد
-- الرصيد = مجموع المدين - مجموع الدائن
-- رصيد موجب = له علينا
-- رصيد سالب = لنا عليه
+## Project Structure
 
-## فحص الصحة
+```
+accounting-system/
+├── core/               # Django project settings
+├── parties/            # Parties app (customers & suppliers)
+├── invoices/           # Invoices app (sales & purchases)
+├── payments/           # Payments app
+├── ledger/             # Automated ledger app
+├── reports/            # Reporting app
+├── api/                # REST API endpoints
+├── templates/          # Shared HTML templates
+├── static/             # Static assets
+├── Dockerfile          # Container image definition
+├── docker-compose.yml  # Multi-container orchestration
+├── requirements.txt    # Python dependencies
+├── manage.py           # Django management entry point
+├── .env.example        # Environment variable template
+└── README.md           # This file
+```
+
+## Accounting Rules
+
+### Invoices
+- A **sales invoice** to a customer creates a **debit entry** against that customer.
+- A **purchase invoice** from a supplier creates a **credit entry** against that supplier.
+
+### Payments
+- A **payment received** from a customer creates a **credit entry** (reduces their debit balance).
+- A **payment made** to a supplier creates a **debit entry** (reduces their credit balance).
+
+### Balance Calculation
+- **Balance = Total Debit − Total Credit**
+- A **positive balance** means the party owes us.
+- A **negative balance** means we owe the party.
+
+## Health Check
+
+Verify that the application and database are running correctly:
 
 ```powershell
 Invoke-RestMethod -Uri http://localhost:8000/health
 ```
 
-النتيجة المتوقعة:
+Expected response:
+
 ```json
 {
     "status": "ok",
@@ -141,6 +172,18 @@ Invoke-RestMethod -Uri http://localhost:8000/health
 }
 ```
 
-## الترخيص
+## Learning Outcomes
 
-جميع الحقوق محفوظة © 2026
+This project demonstrates practical experience with:
+
+- Designing a modular, multi-app Django architecture
+- Implementing double-entry accounting logic in software
+- Building and securing a REST API with JWT authentication
+- Containerizing a full-stack application with Docker Compose
+- Integrating a relational database (PostgreSQL) with an ORM
+- Generating API documentation with OpenAPI/Swagger
+- Managing environment-based configuration for dev and production
+
+## License
+
+All rights reserved © 2026.
